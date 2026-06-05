@@ -1,32 +1,32 @@
-name: Python CI
+name: Build and Push to GHCR
 
 on:
   push:
-    branches:
-      - main
-
-  pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
-  test:
+  build-and-push:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set Up Python
-        uses: actions/setup-python@v5
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          python-version: "3.11"
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Dependencies
+      - name: Build Docker image
         run: |
-          pip install -r requirements.txt
-          python -m spacy download en_core_web_md
+          docker build -t ghcr.io/${{ github.repository_owner }}/text-similarity:latest .
 
-      - name: Verify App Imports
+      - name: Push Docker image
         run: |
-          python -c "import spacy, gradio"
+          docker push ghcr.io/${{ github.repository_owner }}/text-similarity:latest
